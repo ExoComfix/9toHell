@@ -7,10 +7,14 @@ public class PlayerController : MonoBehaviour
     private Vector2 moveInput;
     private Rigidbody2D rb;
 
-    [Header("Stats (GDD Blueprint)")]
+    [Header("Stats & Progression")]
     public float currentBurnout = 0f;
     public float maxBurnout = 100f;
-    public float productivity = 10f;
+
+    [Space]
+    public int currentLevel = 1;
+    public float currentXP = 0f;
+    public float xpToNextLevel = 100f;
 
     void Start()
     {
@@ -31,11 +35,40 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Unity 6 için en güvenli hareket kodu (eski sürüm uyarılarını engeller)
         if (rb != null)
         {
             rb.linearVelocity = moveInput * moveSpeed;
         }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    { 
+        if (collision.CompareTag("Untagged") && collision.name.Contains("XP_Signature"))
+        {
+            GainXP(25f);
+            Destroy(collision.gameObject);
+        }
+    }
+
+    public void GainXP(float amount)
+    {
+        currentXP += amount;
+        Debug.Log($"Kariyer Puanı Kazandın! XP: {currentXP}/{xpToNextLevel}");
+
+        if (currentXP >= xpToNextLevel)
+        {
+            LevelUp();
+        }
+    }
+
+    void LevelUp()
+    {
+        currentXP -= xpToNextLevel;
+        currentLevel++;
+        xpToNextLevel *= 1.2f;
+        moveSpeed += 0.5f;
+
+        Debug.LogWarning($"TERFİ ALDIN! Yeni Unvan Seviyen: {currentLevel}. Artık daha hızlı koşuyorsun!");
     }
 
     public void IncreaseBurnout(float amount)

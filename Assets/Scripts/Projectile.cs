@@ -7,24 +7,32 @@ public class Projectile : MonoBehaviour
     public float lifetime = 3f;
     private Vector3 moveDirection;
 
+    private GameObject xpPrefab;
+
     public void Setup(Vector3 direction)
     {
         this.moveDirection = direction;
-        // Havada asılı kalmasın diye 3 saniye sonra kendini yok eder
+        xpPrefab = Resources.Load<GameObject>("XP_Signature");
         Destroy(gameObject, lifetime);
     }
-
     void Update()
     {
         transform.position += moveDirection * speed * Time.deltaTime;
     }
-
+    
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Çarptığı nesnenin Tag'i "Enemy" ise
         if (collision.CompareTag("Enemy"))
         {
-            // MVP kuralı: Şimdilik düşmanı ve mermiyi direkt yok et
+            if(xpPrefab != null) 
+            {
+                Instantiate(xpPrefab,collision.transform.position,Quaternion.identity);
+            }
+            else 
+            {
+                GameObject loadedXP = GameObject.Find("XP_Signature");
+                if(loadedXP != null) Instantiate(loadedXP,collision.transform.position,Quaternion.identity);
+            }
             Destroy(collision.gameObject);
             Destroy(gameObject);
         }
