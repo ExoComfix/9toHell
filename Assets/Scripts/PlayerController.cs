@@ -1,0 +1,58 @@
+using UnityEngine;
+
+public class PlayerController : MonoBehaviour
+{
+    [Header("Movement")]
+    public float moveSpeed = 5f;
+    private Vector2 moveInput;
+    private Rigidbody2D rb;
+
+    [Header("Stats (GDD Blueprint)")]
+    public float currentBurnout = 0f;
+    public float maxBurnout = 100f;
+    public float productivity = 10f;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.gravityScale = 0f;
+            rb.freezeRotation = true;
+        }
+    }
+
+    void Update()
+    {
+        moveInput.x = Input.GetAxisRaw("Horizontal");
+        moveInput.y = Input.GetAxisRaw("Vertical");
+        moveInput = moveInput.normalized;
+    }
+
+    void FixedUpdate()
+    {
+        // Unity 6 için en güvenli hareket kodu (eski sürüm uyarılarını engeller)
+        if (rb != null)
+        {
+            rb.linearVelocity = moveInput * moveSpeed;
+        }
+    }
+
+    public void IncreaseBurnout(float amount)
+    {
+        currentBurnout += amount;
+        Debug.Log($"Stres Seviyesi: %{currentBurnout}");
+
+        if (currentBurnout >= maxBurnout)
+        {
+            currentBurnout = maxBurnout;
+            GameOver();
+        }
+    }
+
+    private void GameOver()
+    {
+        Debug.Log("İSTİFA ETTİN! Game Over.");
+        Time.timeScale = 0f;
+    }
+}
