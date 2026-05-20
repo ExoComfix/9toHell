@@ -8,11 +8,13 @@ public class Projectile : MonoBehaviour
     private Vector3 moveDirection;
 
     private GameObject xpPrefab;
+    private GameObject fxPrefab;
 
     public void Setup(Vector3 direction)
     {
         this.moveDirection = direction;
         xpPrefab = Resources.Load<GameObject>("XP_Signature");
+        fxPrefab = Resources.Load<GameObject>("FX_EmailDestroy");
         Destroy(gameObject, lifetime);
     }
     void Update()
@@ -24,7 +26,12 @@ public class Projectile : MonoBehaviour
     {
         if (collision.CompareTag("Enemy"))
         {
-            if(xpPrefab != null) 
+            if (fxPrefab)
+            {
+                GameObject effect = Instantiate(fxPrefab, collision.transform.position, Quaternion.identity);
+                Destroy(effect, 0.5f);
+            }
+            if (xpPrefab != null) 
             {
                 Instantiate(xpPrefab,collision.transform.position,Quaternion.identity);
             }
