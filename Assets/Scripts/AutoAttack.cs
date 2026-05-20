@@ -10,6 +10,7 @@ public class AutoAttack : MonoBehaviour
 
     [Header("Detection")]
     public float attackRange = 7f;
+    private float damageModifier = 1f;
     public LayerMask enemyLayer;
 
     void Start()
@@ -53,6 +54,16 @@ public class AutoAttack : MonoBehaviour
         }
         return nearestEnemy;
     }
+    public void UpdateDamage(float multiplier)
+    {
+        damageModifier *= multiplier;
+        Debug.Log($"[WEAPON] Kahve vuruş gücü (Hasar Çarpanı) artırıldı: {damageModifier}");
+    }
+    public void UpdateRange(float bonusRange)
+    {
+        attackRange += bonusRange;
+        Debug.Log($"[WEAPON] Yeni Tarama Menzili: {attackRange}");
+    }
 
     void Fire(Transform target)
     {
@@ -65,6 +76,7 @@ public class AutoAttack : MonoBehaviour
         {
             Vector3 direction = (target.position - transform.position).normalized;
             projectile.Setup(direction);
+            projectile.damage *= damageModifier;
         }
     }
 

@@ -104,6 +104,23 @@ public class PlayerController : MonoBehaviour
         currentBurnout = 0f;
         Debug.Log("[UPGRADE] Stres sıfırlandı!");
     }
+    
+    public void UpgradeDamage()
+    {
+        if (autoAttackScript != null)
+        {
+            autoAttackScript.UpdateDamage(1.5f);
+            Debug.Log("[UPGRADE] Saldırı gücü artırıldı!");
+        }
+    }
+    public void UpgradeRange()
+    {
+        if (autoAttackScript != null)
+        {
+            autoAttackScript.UpdateRange(2f);
+            Debug.Log("[UPGRADE] Saldırı menzili artırıldı!");
+        }
+    }
 
     private void GameOver()
     {

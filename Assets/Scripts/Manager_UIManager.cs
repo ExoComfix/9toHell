@@ -96,10 +96,19 @@ public class Manager_UIManager : MonoBehaviour
         if (player == null || cardIndex >= currentSelectedCards.Count) return;
 
         string chosenID = currentSelectedCards[cardIndex].upgradeID;
+        bool upgradeApplied = false;
 
-        if (chosenID == "AttackSpeed") player.UpgradeAttackSpeed();
-        else if (chosenID == "MoveSpeed") player.UpgradeMoveSpeed();
-        else if (chosenID == "MaxHealth") player.UpgradeMaxHealth();
+        if (chosenID == "AttackSpeed") { player.UpgradeAttackSpeed(); upgradeApplied = true; }
+        else if (chosenID == "MoveSpeed") { player.UpgradeMoveSpeed(); upgradeApplied = true; }
+        else if (chosenID == "MaxHealth") { player.UpgradeMaxHealth(); upgradeApplied = true; }
+        else if (chosenID == "Damage") { player.UpgradeDamage(); upgradeApplied = true; }
+        else if (chosenID == "Range") { player.UpgradeRange(); upgradeApplied = true; }
+
+        if (!upgradeApplied)
+        {
+            Debug.LogError($"[CRITICAL] '{chosenID}' adında bir Upgrade ID kod tarafında bulunamadı! Oyuncunun kilitlenmemesi için teselli ödülü olarak stres sıfırlandı.");
+            player.UpgradeMaxHealth();
+        }
 
         upgradePanel.SetActive(false);
         Time.timeScale = 1f;

@@ -1705,6 +1705,13 @@ MonoBehaviour:
   - upgradeID: MaxHealth
     cardTitle: Performans Primi
     cardDescription: "Hesaba yatan nakit! T\xFCm stresini bir anda s\u0131f\u0131rlar."
+  - upgradeID: Damage
+    cardTitle: KPI Hedefleri
+    cardDescription: "Y\xFCksek motivasyon! Kahve maillerinin hasar\u0131 %50 artar. "
+  - upgradeID: Range
+    cardTitle: "Mesafe Tan\u0131mayan Mail"
+    cardDescription: "CC'ye herkesi ekle! Sald\u0131r\u0131 menzili kal\u0131c\u0131
+      olarak geni\u015Fler"
 --- !u!4 &1344327642
 Transform:
   m_ObjectHideFlags: 0
