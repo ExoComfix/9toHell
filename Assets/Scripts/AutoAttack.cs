@@ -4,12 +4,18 @@ public class AutoAttack : MonoBehaviour
 {
     [Header("Attack Settings")]
     public GameObject projectilePrefab;
-    public float fireRate = 1.5f;
+    public float baseFireRate = 1.5f;
+    private float currentFireRate;
     private float nextFireTime = 0f;
 
     [Header("Detection")]
     public float attackRange = 7f;
     public LayerMask enemyLayer;
+
+    void Start()
+    {
+        currentFireRate = baseFireRate;
+    }
 
     void Update()
     {
@@ -19,14 +25,19 @@ public class AutoAttack : MonoBehaviour
             if (target != null)
             {
                 Fire(target);
-                nextFireTime = Time.time + fireRate;
+                nextFireTime = Time.time + currentFireRate;
             }
         }
     }
 
+    public void UpdateFireRate(float modifier)
+    {
+        currentFireRate = baseFireRate * modifier;
+        Debug.Log($"[WEAPON] Yeni Atış Bekleme Süresi: {currentFireRate} saniye.");
+    }
+
     Transform FindNearestEnemy()
     {
-        // Belirli bir çaptaki düşmanları bulur
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayer);
         Transform nearestEnemy = null;
         float shortestDistance = Mathf.Infinity;
@@ -57,7 +68,6 @@ public class AutoAttack : MonoBehaviour
         }
     }
 
-    // Editörde menzili kırmızı bir çember olarak görmeni sağlar
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

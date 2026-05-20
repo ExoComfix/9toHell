@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4206714506079868033}
   m_Layer: 0
   m_Name: XP_Signature
-  m_TagString: Untagged
+  m_TagString: XP
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

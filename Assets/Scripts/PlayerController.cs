@@ -11,14 +11,20 @@ public class PlayerController : MonoBehaviour
     public float currentBurnout = 0f;
     public float maxBurnout = 100f;
 
+    [HideInInspector] public float attackCooldownModifier = 1f;
+
     [Space]
     public int currentLevel = 1;
     public float currentXP = 0f;
     public float xpToNextLevel = 100f;
 
+    private AutoAttack autoAttackScript;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        autoAttackScript = GetComponent<AutoAttack>();
+
         if (rb != null)
         {
             rb.gravityScale = 0f;
@@ -42,8 +48,8 @@ public class PlayerController : MonoBehaviour
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
-    { 
-        if (collision.CompareTag("Untagged") && collision.name.Contains("XP_Signature"))
+    {
+        if (collision.CompareTag("XP"))
         {
             GainXP(25f);
             Destroy(collision.gameObject);
@@ -53,8 +59,6 @@ public class PlayerController : MonoBehaviour
     public void GainXP(float amount)
     {
         currentXP += amount;
-        Debug.Log($"Kariyer Puanı Kazandın! XP: {currentXP}/{xpToNextLevel}");
-
         if (currentXP >= xpToNextLevel)
         {
             LevelUp();
@@ -67,20 +71,38 @@ public class PlayerController : MonoBehaviour
         currentLevel++;
         xpToNextLevel *= 1.2f;
         moveSpeed += 0.5f;
-
-        Debug.LogWarning($"TERFİ ALDIN! Yeni Unvan Seviyen: {currentLevel}. Artık daha hızlı koşuyorsun!");
+        Debug.LogWarning($"TERFİ ALDIN! Seviye: {currentLevel}");
     }
 
     public void IncreaseBurnout(float amount)
     {
         currentBurnout += amount;
-        Debug.Log($"Stres Seviyesi: %{currentBurnout}");
-
         if (currentBurnout >= maxBurnout)
         {
             currentBurnout = maxBurnout;
             GameOver();
         }
+    }
+
+    public void UpgradeAttackSpeed()
+    {
+        attackCooldownModifier *= 0.75f;
+        if (autoAttackScript != null)
+        {
+            autoAttackScript.UpdateFireRate(attackCooldownModifier);
+        }
+    }
+
+    public void UpgradeMoveSpeed()
+    {
+        moveSpeed += 1.5f;
+        Debug.Log($"[UPGRADE] Yeni Hareket Hızı: {moveSpeed}");
+    }
+
+    public void UpgradeMaxHealth()
+    {
+        currentBurnout = 0f;
+        Debug.Log("[UPGRADE] Stres sıfırlandı!");
     }
 
     private void GameOver()
