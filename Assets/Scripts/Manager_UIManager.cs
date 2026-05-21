@@ -87,7 +87,7 @@ public class Manager_UIManager : MonoBehaviour
         TextMeshProUGUI tmpText = button.GetComponentInChildren<TextMeshProUGUI>();
         if (tmpText != null)
         {
-            tmpText.text = $"<b>{cardData.cardTitle}</b>\n\n{cardData.cardDescription}";
+            tmpText.text = $"{cardData.cardTitle}\n\n{cardData.cardDescription}";
         }
     }
 
