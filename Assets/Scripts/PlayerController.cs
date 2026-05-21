@@ -10,6 +10,9 @@ public class PlayerController : MonoBehaviour
     [Header("Stats & Progression")]
     public float currentBurnout = 0f;
     public float maxBurnout = 100f;
+    [Header("Synergy System")]
+    public System.Collections.Generic.List<string> chosenUpgradeIDs = new System.Collections.Generic.List<string>();
+    [HideInInspector] public bool isOvertimeSynergyActive = false;
 
     [HideInInspector] public float attackCooldownModifier = 1f;
 
@@ -122,9 +125,23 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void GameOver()
+    public void ActivateOvertimeSynergy()
     {
-        Debug.Log("İSTİFA ETTİN! Game Over.");
-        Time.timeScale = 0f;
+        if (isOvertimeSynergyActive) return;
+        isOvertimeSynergyActive = true;
+        Debug.LogWarning("[SYNERGY ACTIVATED] 'Mesai Patlaması' Sinerjisi Tetiklendi! Artık kahveler patlayıcı hasar veriyor!");
+    }
+    void GameOver()
+    {
+        Debug.LogError("[SYSTEM] Karakter burnout oldu! İK çıkış mülakatı başlatılıyor...");
+        Manager_UIManager uiManager = FindAnyObjectByType<Manager_UIManager>();
+        if (uiManager != null)
+        {
+            uiManager.TriggerGameOverScreen();
+        }
+        else
+        {
+            Time.timeScale = 0f;
+        }
     }
 }
