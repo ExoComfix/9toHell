@@ -20,6 +20,7 @@ public class EnemySpawner : MonoBehaviour
     private GameObject regularPrefab;
     private GameObject internPrefab;
     private GameObject hrManagerPrefab;
+    private GameObject micromanagerPrefab;
 
     void Start()
     {
@@ -32,23 +33,20 @@ public class EnemySpawner : MonoBehaviour
         regularPrefab = Resources.Load<GameObject>("Enemy");
         internPrefab = Resources.Load<GameObject>("Enemy_Intern");
         hrManagerPrefab = Resources.Load<GameObject>("Enemy_HR");
-
+        micromanagerPrefab = Resources.Load<GameObject>("Enemy_Micromanager");
         if (regularPrefab == null) Debug.LogWarning("[SPAWNER] 'Enemy' prefab bulunamadı!");
     }
 
     void Update()
     {
         if (playerTransform == null) return;
-
         CalculateDynamicDifficulty();
-
         if (Time.time >= nextSpawnTime)
         {
             SpawnEnemy();
             nextSpawnTime = Time.time + currentSpawnRate;
         }
     }
-
     void CalculateDynamicDifficulty()
     {
         float timeElapsed = Time.time - startTime;
@@ -57,33 +55,39 @@ public class EnemySpawner : MonoBehaviour
         currentSpawnRate = baseSpawnRate - (difficultyLevel * 0.2f);
         currentSpawnRate = Mathf.Max(currentSpawnRate, minSpawnRate);
     }
-
     void SpawnEnemy()
     {
         float randomAngle = Random.Range(0f, Mathf.PI * 2f);
         float randomDistance = Random.Range(minSpawnDistance, maxSpawnDistance);
         Vector3 spawnPosition = playerTransform.position + new Vector3(Mathf.Cos(randomAngle), Mathf.Sin(randomAngle), 0) * randomDistance;
 
-        float roll = Random.value;
         float timeElapsed = Time.time - startTime;
-        float hrChance = Mathf.Min((timeElapsed / 120f) * 0.2f, 0.3f);
-        float internChance = Mathf.Max(0.5f - (timeElapsed / 300f), 0.2f);
+        float regularWeight = 100f;
+        float internWeight = timeElapsed < 120f ? 80f : 30f;
+        float hrWeight = timeElapsed > 60f ? 25f : 5f;
 
-        GameObject prefabToSpawn;
+        float microWeight = timeElapsed > 30f ? 35f : 0f;
 
-        if (hrManagerPrefab != null && roll < hrChance)
-        {
-            prefabToSpawn = hrManagerPrefab;
-        }
-        else if (internPrefab != null && roll < (hrChance + internChance))
-        {
-            prefabToSpawn = internPrefab;
-        }
-        else
+        float totalWeight = regularWeight + internWeight + hrWeight + microWeight;
+        float roll = Random.Range(0f, totalWeight);
+
+        GameObject prefabToSpawn = regularPrefab;
+        if (roll < regularWeight)
         {
             prefabToSpawn = regularPrefab;
         }
-
+        else if (roll < regularWeight + internWeight)
+        {
+            if (internPrefab != null) prefabToSpawn = internPrefab;
+        }
+        else if (roll < regularWeight + internWeight + hrWeight)
+        {
+            if (hrManagerPrefab != null) prefabToSpawn = hrManagerPrefab;
+        }
+        else
+        {
+            if (micromanagerPrefab != null) prefabToSpawn = micromanagerPrefab;
+        }
         if (prefabToSpawn != null)
         {
             Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity);

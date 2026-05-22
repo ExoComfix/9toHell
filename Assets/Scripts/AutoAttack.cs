@@ -68,15 +68,35 @@ public class AutoAttack : MonoBehaviour
     void Fire(Transform target)
     {
         if (projectilePrefab == null) return;
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        PlayerController player = playerObj != null ? playerObj.GetComponent<PlayerController>() : null;
 
-        GameObject projObj = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
-        Projectile projectile = projObj.GetComponent<Projectile>();
+        Vector3 direction = (target.position - transform.position).normalized;
+        SpawnProjectile(direction);
 
-        if (projectile != null)
+        if (player != null && player.isBrainstormSynergyActive)
         {
-            Vector3 direction = (target.position - transform.position).normalized;
-            projectile.Setup(direction);
-            projectile.damage *= damageModifier;
+            Vector3 rightDir = Quaternion.Euler(0, 0, 15) * direction;
+            SpawnProjectile(rightDir);
+
+            Vector3 leftDir = Quaternion.Euler(0, 0, -15) * direction;
+            SpawnProjectile(leftDir);
+        }
+    }
+    void SpawnProjectile(Vector3 dir)
+    {
+        if (ObjectPooler.Instance == null) return;
+
+        GameObject projObj = ObjectPooler.Instance.SpawnFromPool("PlayerCoffee", transform.position, Quaternion.identity);
+
+        if (projObj != null)
+        {
+            Projectile projectile = projObj.GetComponent<Projectile>();
+            if (projectile != null)
+            {
+                projectile.Setup(dir);
+                projectile.damage = 10f * damageModifier;
+            }
         }
     }
 

@@ -10,11 +10,18 @@ public class Manager_UIManager : MonoBehaviour
     public Slider xpSlider;
     public TextMeshProUGUI levelText;
 
+    [Header("Character Selection UI")]
+    public GameObject characterSelectionPanel;
+    public Button selectDevButton;
+    public Button selectMarketingButton;
+    public Button selectAccountingButton;
+
     [Header("Upgrade System UI")]
     public GameObject upgradePanel;
     public Button card1Button;
     public Button card2Button;
     public Button card3Button;
+
 
     [Header("Game Over UI Elements")]
     public GameObject gameOverPanel;
@@ -29,7 +36,6 @@ public class Manager_UIManager : MonoBehaviour
     public List<UpgradeCard> allUpgradesPool = new List<UpgradeCard>();
     private List<UpgradeCard> currentSelectedCards = new List<UpgradeCard>();
     private PlayerController player;
-    private int lastCheckedLevel = 1;
 
     private int upgradeQueueCount = 0;
 
@@ -43,6 +49,75 @@ public class Manager_UIManager : MonoBehaviour
         card1Button.onClick.AddListener(() => OnCardClicked(0));
         card2Button.onClick.AddListener(() => OnCardClicked(1));
         card3Button.onClick.AddListener(() => OnCardClicked(2));
+
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (restartButton != null) restartButton.onClick.AddListener(() => RestartGame()); if (selectDevButton != null) selectDevButton.onClick.AddListener(() => SelectDepartment(0));
+        if (selectMarketingButton != null) selectMarketingButton.onClick.AddListener(() => SelectDepartment(1));
+        if (selectAccountingButton != null) selectAccountingButton.onClick.AddListener(() => SelectDepartment(2));
+
+        if (characterSelectionPanel != null)
+        {
+            characterSelectionPanel.SetActive(true);
+            Time.timeScale = 0f;
+        }
+    }
+    void SelectDepartment(int deptIndex)
+    {
+        if (player == null) return;
+        player.selectedDepartment = (PlayerController.DepartmentType)deptIndex;
+        player.ApplyDepartmentStats();
+        if (burnoutSlider != null)
+        {
+            burnoutSlider.maxValue = player.maxBurnout;
+            burnoutSlider.value = 0f;
+        }
+        if (characterSelectionPanel != null)
+        {
+            characterSelectionPanel.SetActive(false);
+        }
+
+        Time.timeScale = 1f;
+        Debug.Log($"[SYSTEM] Oyun {player.selectedDepartment} olarak başladı!");
+    }
+    private void OnEnable()
+    {
+        PlayerController.OnBurnoutChanged += UpdateBurnoutUI;
+        PlayerController.OnXPChanged += UpdateXPUI;
+        PlayerController.OnLevelChanged += UpdateLevelUI;
+    }
+    private void OnDisable()
+    {
+        PlayerController.OnBurnoutChanged -= UpdateBurnoutUI;
+        PlayerController.OnXPChanged -= UpdateXPUI;
+        PlayerController.OnLevelChanged -= UpdateLevelUI;
+    }
+    private void UpdateBurnoutUI(float currentBurnout, float maxBurnout)
+    {
+        if (burnoutSlider != null)
+        {
+            burnoutSlider.maxValue = maxBurnout;
+            burnoutSlider.value = currentBurnout;
+        }
+    }
+    private void UpdateXPUI(float currentXP, float xpToNextLevel)
+    {
+        if (xpSlider != null)
+        {
+            xpSlider.maxValue = xpToNextLevel;
+            xpSlider.value = currentXP;
+        }
+    }
+    private void UpdateLevelUI(int currentLevel)
+    {
+        if (levelText != null)
+        {
+            levelText.text = $"Unvan: Developer (Lv. {currentLevel})";
+            upgradeQueueCount++;
+            if (!upgradePanel.activeSelf)
+            {
+                ShowUpgradeScreen();
+            }
+        }
     }
 
     public void TriggerGameOverScreen()
@@ -73,33 +148,6 @@ public class Manager_UIManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
-    }
-
-    void Update()
-    {
-        if (player == null) return;
-
-        burnoutSlider.value = player.currentBurnout;
-        xpSlider.maxValue = player.xpToNextLevel;
-        xpSlider.value = player.currentXP;
-
-        string title = "Stajyer";
-        if (player.currentLevel >= 2 && player.currentLevel < 4) title = "Junior Uzman";
-        else if (player.currentLevel >= 4 && player.currentLevel < 6) title = "Senior Uzman";
-        else if (player.currentLevel >= 6) title = "Müdür Yardımcısı";
-
-        levelText.text = $"Unvan: {title} (Lv. {player.currentLevel})";
-
-        while (player.currentLevel > lastCheckedLevel)
-        {
-            lastCheckedLevel++;
-            upgradeQueueCount++;
-        }
-
-        if (upgradeQueueCount > 0 && !upgradePanel.activeSelf)
-        {
-            ShowUpgradeScreen();
-        }
     }
 
     void ShowUpgradeScreen()
@@ -164,15 +212,28 @@ public class Manager_UIManager : MonoBehaviour
         if (player.chosenUpgradeIDs.Contains("AttackSpeed") && player.chosenUpgradeIDs.Contains("Damage"))
         {
             player.ActivateOvertimeSynergy();
-            ShowSynergyNotification("<color=#FFCC00><b>[WARN] SİNERJİ AKTİF: MESAİ PATLAMASI [WARN]</b></color>\nKahve bardakları artık alan hasarı veriyor!");
+            ShowSynergyNotification("<color=#FFCC00><b>SİNERJİ AKTİF: MESAİ PATLAMASI</b></color>\nKahve bardakları artık alan hasarı veriyor!");
         }
 
-        upgradeQueueCount--;
-
-        if (upgradeQueueCount > 0)
+        if (player.chosenUpgradeIDs.Contains("Range") && player.chosenUpgradeIDs.Contains("Damage"))
         {
-            ShowUpgradeScreen();
+            player.ActivateDeadlineSynergy();
+            ShowSynergyNotification("<color=#FF3333><b>🚨 SİNERJİ: DEADLINE PANELİ</b></color>\nAtışlar çarptığı yerde düşmanları %50 yavaşlatan kırmızı teslim bölgeleri oluşturuyor!");
         }
+
+        if (player.chosenUpgradeIDs.Contains("MoveSpeed") && player.chosenUpgradeIDs.Contains("MaxHealth"))
+        {
+            player.ActivateHomeOfficeSynergy();
+            ShowSynergyNotification("<color=#33FF33><b>🏡 SİNERJİ: HOME OFFICE LÜKSÜ</b></color>\nKahve bardakları artık stajyerleri ve müdürleri kurumsal bir güçle geriye fırlatıyor!");
+        }
+
+        if (player.chosenUpgradeIDs.Contains("AttackSpeed") && player.chosenUpgradeIDs.Contains("Range"))
+        {
+            player.ActivateBrainstormSynergy();
+            ShowSynergyNotification("<color=#3399FF><b>💡 SİNERJİ: BRAINSTORMING</b></color>\nArtık tek bir bardak değil, plaza diliyle harmanlanmış çoklu kahve dalgası fırlatıyorsun!");
+        }
+        upgradeQueueCount--;
+        if (upgradeQueueCount > 0) ShowUpgradeScreen();
         else
         {
             upgradePanel.SetActive(false);
