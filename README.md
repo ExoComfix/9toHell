@@ -10,8 +10,10 @@ In this corporate nightmare, you play as a burnt-out office worker trying to sur
 
 * **Spite-Driven Movement:** Evade toxic tasks using tight `WASD` or Arrow key controls.
 * **Caffeine Defense Automation:** Automatically throw coffee mugs at the nearest incoming corporate threat.
+* **Corporate Hierarchy Dynamics:** Face different types of office threats, from speedy **Interns** to tanky **HR Managers**, each with unique stats and corporate drops.
 * **Dynamic Overtime Spawner:** Endless waves of "ASAP" targets scaling in real-time.
-* **Corporate Hierarchy Progression (XP):** Collect **Approved Signatures** from fallen tasks to gain XP, climb the corporate ladder, and unlock instant performance promotions.
+* **Exit Interview Mechanics:** Receive an **End-of-Run Report** detailing your tenure, survival duration, and final corporate rank.
+* **Corporate Hierarchy Progression (XP):** Collect **Approved Signatures** to climb the ladder and unlock performance promotions.
 * **Stress Management Visuals:** Real-time **Burnout UI Bar** (Health) and **Promotion UI Bar** (XP) to track your sanity.
 
 ---
@@ -20,15 +22,15 @@ In this corporate nightmare, you play as a burnt-out office worker trying to sur
 
 * **Game Engine:** Unity 6 (6000.0.x)
 * **Graphics:** Universal Render Pipeline (URP) 2D
-* **Input Handling:** Dual-Input System (Supporting both Legacy and Active New Input Systems)
-* **Architecture:** Modular Manager pattern (`Manager_EnemySpawner`, `Manager_UIManager`) following strict naming conventions for scalable indie development.
+* **UI/UX:** **TextMeshPro** integration with Noto Sans for full Unicode/emoji support.
+* **Architecture:** Modular Manager pattern (`Manager_EnemySpawner`, `Manager_UIManager`) with a data-driven approach to enemy roles and drops.
 
 ---
 
 ## 📅 Roadmap / Next Steps
 
 - [x] Week 1: Core Mechanics, Auto-Attack, Enemy AI, XP System
-- [x] Week 2: Functional UI Canvas (Burnout & Promotion Bars)
+- [x] Week 2: Functional UI, Game Over/Mülakat Screen & Corporate Hierarchy
 - [ ] Week 3: Corporate Upgrades & Progression Tree (The "Synergy Perks")
 - [ ] Week 4: Polish, Corporate SFX/Music, and Steam-ready Build
 
