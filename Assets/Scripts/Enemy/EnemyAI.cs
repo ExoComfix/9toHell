@@ -126,7 +126,6 @@ public class EnemyAI : MonoBehaviour
             }
         }
     }
-
     public void TakeDamage(float damageAmount)
     {
         currentHealth -= damageAmount;
@@ -136,10 +135,10 @@ public class EnemyAI : MonoBehaviour
     #region DEBUFFS (SINERJI ETKILERI)
     public void ApplySlow(float slowAmount, float duration = 2f)
     {
+        if (!gameObject.activeInHierarchy) return;
         if (slowCoroutine != null) StopCoroutine(slowCoroutine);
         slowCoroutine = StartCoroutine(SlowRoutine(slowAmount, duration));
     }
-
     private IEnumerator SlowRoutine(float slowAmount, float duration)
     {
         speedModifier = Mathf.Max(slowAmount, 0.2f);

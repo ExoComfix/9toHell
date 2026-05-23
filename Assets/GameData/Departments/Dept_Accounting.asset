@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dept_Accounting
   m_EditorClassIdentifier: Assembly-CSharp::DepartmentData
   departmentName: 
-  departmentType: 0
+  departmentType: 2
   moveSpeed: 5
   maxBurnout: 100
   attackCooldownModifier: 1

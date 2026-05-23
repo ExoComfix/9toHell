@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7890477281027066360}
   - component: {fileID: 5859402028658082086}
   - component: {fileID: 3165424700626907954}
+  - component: {fileID: 9186435379973357115}
   m_Layer: 3
   m_Name: Enemy_CEO
   m_TagString: Enemy
@@ -171,3 +172,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BossCEO
   bossData: {fileID: 11400000, guid: f9aef55eed9652e4daa99923812c95a3, type: 2}
   currentPhase: 0
+--- !u!114 &9186435379973357115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203473708505169210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d70e0b49cb6fef444a66fb7ee40ccff1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyProjectile

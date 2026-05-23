@@ -19,3 +19,4 @@ MonoBehaviour:
   projectileSpeed: 10
   lifetime: 3
   projectilePrefab: {fileID: 6561683883183623299, guid: 859b9e6636bdbf44dabe1fc67da1b51e, type: 3}
+  poolTag: PlayerCoffee

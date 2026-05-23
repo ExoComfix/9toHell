@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dept_Marketing
   m_EditorClassIdentifier: Assembly-CSharp::DepartmentData
   departmentName: 
-  departmentType: 0
+  departmentType: 1
   moveSpeed: 5
   maxBurnout: 100
   attackCooldownModifier: 1

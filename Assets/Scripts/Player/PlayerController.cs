@@ -15,7 +15,7 @@ public class PlayerController : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Animator anim;
 
-    [Header("Stats & Progression (Corporate Horror)")]
+    [Header("Stats & Progression")]
     public float currentBurnout = 0f;
     public float maxBurnout = 100f;
     public int currentLevel = 1;

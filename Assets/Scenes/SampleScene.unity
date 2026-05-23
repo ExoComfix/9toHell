@@ -1510,6 +1510,15 @@ MonoBehaviour:
   - tag: EnemyReport
     prefab: {fileID: 6561683883183623299, guid: bbbda944e9edf3a45b590bfe582f6342, type: 3}
     size: 150
+  - tag: XP_Signature
+    prefab: {fileID: 8312669375231432464, guid: 68c62e6bfad29914689dcf7e81efab7e, type: 3}
+    size: 150
+  - tag: FX_EmailDestroy
+    prefab: {fileID: 2096230626419943962, guid: 0ef51d0b11dd0614d874a4538db1756f, type: 3}
+    size: 150
+  - tag: FX_Explosion
+    prefab: {fileID: 7448521572774731885, guid: ab3243e443c76404ea14bad2b455dc3c, type: 3}
+    size: 150
 --- !u!212 &478732747
 SpriteRenderer:
   serializedVersion: 2
@@ -3333,6 +3342,7 @@ MonoBehaviour:
   - upgradeID: Range
     cardTitle: "Mesafe Tan\u0131mayan Mail"
     cardDescription: "CC'ye herkesi ekle! Sald\u0131r\u0131 menzili <color=#FFAA00><b>geni\u015Fler</b></color>."
+  currentLevelXP: 0
 --- !u!4 &1344327642
 Transform:
   m_ObjectHideFlags: 0
@@ -4506,9 +4516,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AutoAttack
   currentWeaponData: {fileID: 11400000, guid: f3854b8b3494b144f85a5eb09e5dd21e, type: 2}
+  currentFireRate: 0
+  dynamicRange: 0
+  damageModifier: 1
   enemyLayer:
     serializedVersion: 2
     m_Bits: 8
+  targetScanRate: 0.1
 --- !u!114 &1976406958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4525,15 +4539,11 @@ MonoBehaviour:
   moveSpeed: 5
   currentBurnout: 0
   maxBurnout: 1e+9
-  chosenUpgradeIDs: []
-  isOvertimeSynergyActive: 0
-  isDeadlineSynergyActive: 0
-  isHomeOfficeSynergyActive: 0
-  isBrainstormSynergyActive: 0
-  attackCooldownModifier: 1
   currentLevel: 1
   currentXP: 0
   xpToNextLevel: 100
+  attackCooldownModifier: 1
+  chosenUpgradeIDs: []
 --- !u!61 &1976406959
 BoxCollider2D:
   m_ObjectHideFlags: 0

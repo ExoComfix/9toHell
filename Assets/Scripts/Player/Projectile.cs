@@ -110,9 +110,9 @@ public class Projectile : MonoBehaviour
 
     private void ApplyDamageAndSynergies(EnemyAI enemy)
     {
-        if (playerRef == null) return;
-
+        if (playerRef == null || enemy == null) return;
         enemy.TakeDamage(damage);
+        if (!enemy.gameObject.activeInHierarchy) return;
         if (playerRef.IsSynergyActive("Deadline"))
         {
             enemy.ApplySlow(0.5f);

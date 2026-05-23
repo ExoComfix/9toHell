@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 4486414328214569932}
   - component: {fileID: 391935013885151292}
   - component: {fileID: 2617366592989502441}
+  - component: {fileID: 1173437756632575873}
   m_Layer: 3
   m_Name: Enemy_SeniorManager
   m_TagString: Enemy
@@ -170,3 +171,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
   enemyData: {fileID: 11400000, guid: c0ee730d630b4cc48813a2561c1b56f0, type: 2}
+  speedModifier: 1
+  xpPoolTag: XP_Signature
+--- !u!114 &1173437756632575873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8335313731986586603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d70e0b49cb6fef444a66fb7ee40ccff1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyProjectile

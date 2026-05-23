@@ -22,4 +22,7 @@ MonoBehaviour:
   fireRate: 1.5
   poolTag: EnemyReport
   dropChance: 0.2
-  potentialDropItems: []
+  potentialDropItems:
+  - Item_Espresso
+  - Item_Stapler
+  - Health_Coffee
