@@ -1,69 +1,74 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
-    public enum DepartmentType { Developer, Marketing, Accounting }
-
     [Header("Data Driven Department")]
     public DepartmentData currentDepartmentData;
 
     [Header("Movement (Runtime Dynamic)")]
-    public float moveSpeed = 5f;
+    [SerializeField] private float moveSpeed = 5f;
     private Vector2 moveInput;
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Animator anim;
 
-    [Header("Stats & Progression")]
+    [Header("Stats & Progression (Corporate Horror)")]
     public float currentBurnout = 0f;
     public float maxBurnout = 100f;
-
-    [Header("Synergy System")]
-    public System.Collections.Generic.List<string> chosenUpgradeIDs = new System.Collections.Generic.List<string>();
-    [HideInInspector] public bool isOvertimeSynergyActive = false;    // AttackSpeed + Damage (Kahve patlaması)
-    [HideInInspector] public bool isDeadlineSynergyActive = false;    // Range + Damage (Alan yavaşlatma)
-    [HideInInspector] public bool isHomeOfficeSynergyActive = false;  // MoveSpeed + MaxHealth (Geri tepme)
-    [HideInInspector] public bool isBrainstormSynergyActive = false;   // AttackSpeed + Range (Üçlü atış)
-
-    [HideInInspector] public float attackCooldownModifier = 1f;
-
-    // UI Listeners
-    public static event Action<float, float> OnBurnoutChanged;
-    public static event Action<float, float> OnXPChanged;
-    public static event Action<int> OnLevelChanged;
-
-    [Space]
     public int currentLevel = 1;
     public float currentXP = 0f;
     public float xpToNextLevel = 100f;
 
+    [HideInInspector] public float attackCooldownModifier = 1f;
+
+    [Header("Synergy & Upgrades Trackers")]
+    private HashSet<string> activeSynergies = new HashSet<string>();
+    public List<string> chosenUpgradeIDs = new List<string>();
+
+    // UI & Game Event Listeners
+    public static event Action<float, float> OnBurnoutChanged;
+    public static event Action<float, float> OnXPChanged;
+    public static event Action<int> OnLevelChanged;
+    public static event Action OnPlayerDeath;
+
     private AutoAttack autoAttackScript;
 
-    void Start()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         autoAttackScript = GetComponent<AutoAttack>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
+    }
 
+    private void Start()
+    {
+        ConfigureRigidbody();
+        ApplyPermanentUpgrades();
+        ApplyDepartmentStats();
+        InitUI();
+    }
+
+    private void ConfigureRigidbody()
+    {
         if (rb != null)
         {
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
         }
-        ApplyPermanentUpgrades();
-        ApplyDepartmentStats();
-        InitUI();
     }
 
     public void ApplyDepartmentStats()
     {
         if (currentDepartmentData == null)
         {
-            Debug.LogError("[HR] Karakterin Departman Verisi (currentDepartmentData) atanmamış! Lütfen Inspector'dan bir asset sürükleyin.");
+            Debug.LogError("[HR] Karakterin Departman Verisi (currentDepartmentData) atanmamış!");
             return;
         }
+
         moveSpeed = currentDepartmentData.moveSpeed;
         maxBurnout = currentDepartmentData.maxBurnout;
         attackCooldownModifier = currentDepartmentData.attackCooldownModifier;
@@ -72,63 +77,62 @@ public class PlayerController : MonoBehaviour
         if (autoAttackScript != null)
         {
             autoAttackScript.UpdateFireRate(attackCooldownModifier);
-            if (currentDepartmentData.damageMultiplier > 1f)
-            {
-                autoAttackScript.UpdateDamage(currentDepartmentData.damageMultiplier);
-            }
-            if (currentDepartmentData.rangeBonus > 0f)
-            {
-                autoAttackScript.UpdateRange(currentDepartmentData.rangeBonus);
-            }
+            if (currentDepartmentData.damageMultiplier > 1f) autoAttackScript.UpdateDamage(currentDepartmentData.damageMultiplier);
+            if (currentDepartmentData.rangeBonus > 0f) autoAttackScript.UpdateRange(currentDepartmentData.rangeBonus);
         }
 
-        Debug.LogWarning($"[HR] {currentDepartmentData.departmentName} Departmanı işe başladı! Hız: {moveSpeed}, Max Stres: {maxBurnout}");
+        Debug.LogWarning($"[HR] {currentDepartmentData.departmentName} Departmanı işe başladı! Hız: {moveSpeed}");
     }
-    void ApplyPermanentUpgrades()
+
+    private void ApplyPermanentUpgrades()
     {
         if (DataManager.Instance == null) return;
 
         int damageLevel = DataManager.Instance.GetUpgradeLevel("Damage");
         int speedLevel = DataManager.Instance.GetUpgradeLevel("Speed");
         int healthLevel = DataManager.Instance.GetUpgradeLevel("Health");
-        Debug.Log($"[UPGRADES] Kalıcı Yükseltmeler Uygulanıyor - Hasar: {damageLevel}, Hız: {speedLevel}, Sağlık: {healthLevel}");
     }
+
     private void InitUI()
     {
-        Invoke("TriggerInitialUI", 0.05f);
+        Invoke(nameof(TriggerInitialUI), 0.05f);
     }
+
     private void TriggerInitialUI()
     {
         OnBurnoutChanged?.Invoke(currentBurnout, maxBurnout);
         OnXPChanged?.Invoke(currentXP, xpToNextLevel);
         OnLevelChanged?.Invoke(currentLevel);
     }
-    void Update()
+
+    private void Update()
+    {
+        HandleInput();
+        HandleAnims();
+    }
+
+    private void FixedUpdate()
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = moveInput * moveSpeed;
+        }
+    }
+
+    private void HandleInput()
     {
         moveInput.x = Input.GetAxisRaw("Horizontal");
         moveInput.y = Input.GetAxisRaw("Vertical");
         moveInput = moveInput.normalized;
 
-        if (moveInput.x > 0f)
-        {
-            spriteRenderer.flipX = false;
-        }
-        else if (moveInput.x < 0f)
-        {
-            spriteRenderer.flipX = true;
-        }
-
+        if (moveInput.x > 0f) spriteRenderer.flipX = false;
+        else if (moveInput.x < 0f) spriteRenderer.flipX = true;
+    }
+    private void HandleAnims()
+    {
         if (anim != null)
         {
-            bool isMoving = moveInput.magnitude > 0f;
-            anim.SetBool("isWalking", isMoving);
-        }
-    }
-    void FixedUpdate()
-    {
-        if (rb != null)
-        {
-            rb.linearVelocity = moveInput * moveSpeed;
+            anim.SetBool("isWalking", moveInput.sqrMagnitude > 0f);
         }
     }
     private void OnTriggerEnter2D(Collider2D collision)
@@ -136,14 +140,10 @@ public class PlayerController : MonoBehaviour
         if (collision.CompareTag("XP"))
         {
             AddXP(25f);
-            Manager_UIManager uiManager = FindAnyObjectByType<Manager_UIManager>();
-            if (uiManager != null) 
-            {
-                uiManager.currentLevelXP += 1;
-            }
             Destroy(collision.gameObject);
         }
     }
+
     public void AddXP(float amount)
     {
         currentXP += amount;
@@ -153,7 +153,7 @@ public class PlayerController : MonoBehaviour
         }
         OnXPChanged?.Invoke(currentXP, xpToNextLevel);
     }
-    void LevelUp()
+    private void LevelUp()
     {
         currentXP -= xpToNextLevel;
         currentLevel++;
@@ -164,7 +164,7 @@ public class PlayerController : MonoBehaviour
     public void IncreaseBurnout(float amount)
     {
         currentBurnout += amount;
-        if (currentBurnout < 0f) currentBurnout = 0f;
+        currentBurnout = Mathf.Clamp(currentBurnout, 0f, maxBurnout);
         OnBurnoutChanged?.Invoke(currentBurnout, maxBurnout);
 
         if (currentBurnout >= maxBurnout)
@@ -172,77 +172,44 @@ public class PlayerController : MonoBehaviour
             GameOver();
         }
     }
-    public void UpgradeAttackSpeed()
+    #region MODULAR UPGRADE & SYNERGY SYSTEM
+
+    public void ModifyMoveSpeed(float amount)
     {
-        attackCooldownModifier *= 0.75f;
-        if (autoAttackScript != null)
-        {
-            autoAttackScript.UpdateFireRate(attackCooldownModifier);
-        }
+        moveSpeed += amount;
     }
-    public void UpgradeMoveSpeed()
-    {
-        moveSpeed += 1.5f;
-        Debug.Log($"[UPGRADE] Yeni Hareket Hızı: {moveSpeed}");
-    }
-    public void UpgradeMaxHealth()
+    public void ResetBurnout()
     {
         currentBurnout = 0f;
         OnBurnoutChanged?.Invoke(currentBurnout, maxBurnout);
-        Debug.Log("[UPGRADE] Stres sıfırlandı!");
     }
-    public void UpgradeDamage()
+    public void ApplyUpgradeToWeapon(string upgradeType, float value)
     {
-        if (autoAttackScript != null)
+        if (autoAttackScript == null) return;
+
+        switch (upgradeType)
         {
-            autoAttackScript.UpdateDamage(1.5f);
-            Debug.Log("[UPGRADE] Saldırı gücü artırıldı!");
+            case "Damage": autoAttackScript.UpdateDamage(value); break;
+            case "Range": autoAttackScript.UpdateRange(value); break;
+            case "FireRate": autoAttackScript.UpdateFireRate(value); break;
         }
     }
-    public void UpgradeRange()
+    public void ActivateSynergy(string synergyID)
     {
-        if (autoAttackScript != null)
-        {
-            autoAttackScript.UpdateRange(2f);
-            Debug.Log("[UPGRADE] Saldırı menzili artırıldı!");
-        }
+        if (activeSynergies.Contains(synergyID)) return;
+
+        activeSynergies.Add(synergyID);
+        Debug.LogWarning($"[SYNERGY ACTIVATED] {synergyID} sinerjisi başarıyla devreye alındı!");
     }
-    public void ActivateOvertimeSynergy()
+
+    public bool IsSynergyActive(string synergyID)
     {
-        if (isOvertimeSynergyActive) return;
-        isOvertimeSynergyActive = true;
-        Debug.LogWarning("[SYNERGY ACTIVATED] 'Mesai Patlaması' Sinerjisi Tetiklendi! Artık kahveler patlayıcı hasar veriyor!");
+        return activeSynergies.Contains(synergyID);
     }
-    public void ActivateDeadlineSynergy()
-    {
-        if (isDeadlineSynergyActive) return;
-        isDeadlineSynergyActive = true;
-        Debug.LogWarning("[SYNERGY] 'Deadline Paneli' Sinerjisi Aktif! Kahveler düşmanı yavaşlatıyor.");
-    }
-    public void ActivateHomeOfficeSynergy()
-    {
-        if (isHomeOfficeSynergyActive) return;
-        isHomeOfficeSynergyActive = true;
-        Debug.LogWarning("[SYNERGY] 'Home Office Lüksü' Sinerjisi Aktif! Kahveler kurumsal geri tepme (Knockback) uyguluyor.");
-    }
-    public void ActivateBrainstormSynergy()
-    {
-        if (isBrainstormSynergyActive) return;
-        isBrainstormSynergyActive = true;
-        if (autoAttackScript != null) autoAttackScript.UpdateFireRate(attackCooldownModifier * 0.8f);
-        Debug.LogWarning("[SYNERGY] 'Brainstorming' Sinerjisi Aktif! Atışlar artık çoklu yayılıyor.");
-    }
-    void GameOver()
+    #endregion
+    private void GameOver()
     {
         Debug.LogError("[SYSTEM] Karakter burnout oldu! İK çıkış mülakatı başlatılıyor...");
-        Manager_UIManager uiManager = FindAnyObjectByType<Manager_UIManager>();
-        if (uiManager != null)
-        {
-            uiManager.TriggerGameOverScreen();
-        }
-        else
-        {
-            Time.timeScale = 0f;
-        }
+        OnPlayerDeath?.Invoke();
     }
 }

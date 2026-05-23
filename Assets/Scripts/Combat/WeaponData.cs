@@ -10,4 +10,5 @@ public class WeaponData : ScriptableObject
     public float projectileSpeed = 10f;
     public float lifetime = 3f;
     public GameObject projectilePrefab;
+    public string poolTag;
 }

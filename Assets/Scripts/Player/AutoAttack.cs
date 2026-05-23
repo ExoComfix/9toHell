@@ -1,18 +1,35 @@
 using UnityEngine;
+using System.Collections;
 
 public class AutoAttack : MonoBehaviour
 {
     [Header("Data Driven Weapon")]
     public WeaponData currentWeaponData;
-    private float currentFireRate;
-    private float dynamicRange;
-    private float damageModifier = 1f;
+    [SerializeField] private float currentFireRate;
+    [SerializeField] private float dynamicRange;
+    [SerializeField] private float damageModifier = 1f;
     private float nextFireTime = 0f;
 
     [Header("Detection Settings")]
     public LayerMask enemyLayer;
+    [Tooltip("Düşman tarama sıklığı (Saniye). Performans için her frame tarama yapılmaz.")]
+    [SerializeField] private float targetScanRate = 0.1f;
 
-    void Start()
+    private Transform currentNearestEnemy;
+    private PlayerController playerController;
+
+    private void Awake()
+    {
+        playerController = GetComponent<PlayerController>();
+    }
+
+    private void Start()
+    {
+        InitializeWeapon();
+        StartCoroutine(ScanForTargetsRoutine());
+    }
+
+    public void InitializeWeapon()
     {
         if (currentWeaponData != null)
         {
@@ -20,44 +37,42 @@ public class AutoAttack : MonoBehaviour
             dynamicRange = currentWeaponData.attackRange;
         }
     }
-    void Update()
+
+    private void Update()
     {
         if (currentWeaponData == null) return;
 
         if (Time.time >= nextFireTime)
         {
-            Transform target = FindNearestEnemy();
-            if (target != null)
+            if (currentNearestEnemy != null)
             {
-                Fire(target);
+                ExecuteAttackPattern(currentNearestEnemy);
                 nextFireTime = Time.time + currentFireRate;
             }
         }
     }
-    public void UpdateFireRate(float modifier)
+    private IEnumerator ScanForTargetsRoutine()
     {
-        if (currentWeaponData == null) return;
-        currentFireRate = currentWeaponData.baseFireRate * modifier;
-        Debug.Log($"[WEAPON] Yeni Atış Bekleme Süresi: {currentFireRate} saniye.");
+        WaitForSeconds wait = new WaitForSeconds(targetScanRate);
+        while (true)
+        {
+            if (currentWeaponData != null)
+            {
+                currentNearestEnemy = FindNearestEnemy();
+            }
+            yield return wait;
+        }
     }
-    public void UpdateDamage(float multiplier)
-    {
-        damageModifier *= multiplier;
-        Debug.Log($"[WEAPON] Kahve vuruş gücü (Hasar Çarpanı) artırıldı: {damageModifier}");
-    }
-    public void UpdateRange(float bonusRange)
-    {
-        dynamicRange += bonusRange;
-        Debug.Log($"[WEAPON] Yeni Tarama Menzili: {dynamicRange}");
-    }
-    Transform FindNearestEnemy()
+
+    private Transform FindNearestEnemy()
     {
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, dynamicRange, enemyLayer);
         Transform nearestEnemy = null;
         float shortestDistance = Mathf.Infinity;
+
         foreach (Collider2D enemy in hitEnemies)
         {
-            float distanceToEnemy = Vector3.Distance(transform.position, enemy.transform.position);
+            float distanceToEnemy = (transform.position - enemy.transform.position).sqrMagnitude;
             if (distanceToEnemy < shortestDistance)
             {
                 shortestDistance = distanceToEnemy;
@@ -66,24 +81,56 @@ public class AutoAttack : MonoBehaviour
         }
         return nearestEnemy;
     }
-    void Fire(Transform target)
+
+    private void ExecuteAttackPattern(Transform target)
     {
         if (ObjectPooler.Instance == null || currentWeaponData == null) return;
-        GameObject projObj = ObjectPooler.Instance.SpawnFromPool("PlayerCoffee", transform.position, Quaternion.identity);
+
+        Vector3 baseDirection = (target.position - transform.position).normalized;
+        if (playerController != null && playerController.IsSynergyActive("Brainstorm"))
+        {
+            FireProjectile(baseDirection);
+            FireProjectile(Quaternion.Euler(0, 0, 15) * baseDirection);
+            FireProjectile(Quaternion.Euler(0, 0, -15) * baseDirection);
+        }
+        else
+        {
+            FireProjectile(baseDirection);
+        }
+    }
+
+    private void FireProjectile(Vector3 direction)
+    {
+        GameObject projObj = ObjectPooler.Instance.SpawnFromPool(currentWeaponData.poolTag, transform.position, Quaternion.identity);
 
         if (projObj != null)
         {
             Projectile projectile = projObj.GetComponent<Projectile>();
             if (projectile != null)
             {
-                Vector3 direction = (target.position - transform.position).normalized;
-                projectile.Setup(direction);
+                projectile.Setup(direction, playerController);
                 projectile.damage = currentWeaponData.baseDamage * damageModifier;
                 projectile.speed = currentWeaponData.projectileSpeed;
                 projectile.lifetime = currentWeaponData.lifetime;
             }
         }
     }
+    #region MUTATORS (YÜKSELTME SİSTEMLERİ İÇİN)
+    public void UpdateFireRate(float modifier)
+    {
+        if (currentWeaponData == null) return;
+        currentFireRate = currentWeaponData.baseFireRate * modifier;
+    }
+    public void UpdateDamage(float multiplier)
+    {
+        damageModifier *= multiplier;
+    }
+
+    public void UpdateRange(float bonusRange)
+    {
+        dynamicRange += bonusRange;
+    }
+    #endregion
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
