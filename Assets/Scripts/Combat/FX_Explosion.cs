@@ -8,10 +8,22 @@ public class FX_Explosion : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private float elapsedTime = 0f;
 
-    void Start()
+    private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void OnEnable()
+    {
+        elapsedTime = 0f;
         transform.localScale = Vector3.zero;
+
+        if (spriteRenderer != null)
+        {
+            Color color = spriteRenderer.color;
+            color.a = 0.6f;
+            spriteRenderer.color = color;
+        }
     }
 
     void Update()
@@ -32,7 +44,14 @@ public class FX_Explosion : MonoBehaviour
         }
         else
         {
-            Destroy(gameObject);
+            if (ObjectPooler.Instance != null)
+            {
+                ObjectPooler.Instance.ReturnToPool(gameObject);
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
         }
     }
 }

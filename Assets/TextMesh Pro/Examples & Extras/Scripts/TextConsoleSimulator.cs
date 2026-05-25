@@ -32,33 +32,24 @@ namespace TMPro.Examples
         {
             TMPro_EventManager.TEXT_CHANGED_EVENT.Remove(ON_TEXT_CHANGED);
         }
-
-
-        // Event received when the text object has changed.
         void ON_TEXT_CHANGED(Object obj)
         {
             hasTextChanged = true;
         }
-
-
-        /// <summary>
-        /// Method revealing the text one character at a time.
-        /// </summary>
-        /// <returns></returns>
         IEnumerator RevealCharacters(TMP_Text textComponent)
         {
             textComponent.ForceMeshUpdate();
 
             TMP_TextInfo textInfo = textComponent.textInfo;
 
-            int totalVisibleCharacters = textInfo.characterCount; // Get # of Visible Character in text object
+            int totalVisibleCharacters = textInfo.characterCount;
             int visibleCount = 0;
 
             while (true)
             {
                 if (hasTextChanged)
                 {
-                    totalVisibleCharacters = textInfo.characterCount; // Update visible character count.
+                    totalVisibleCharacters = textInfo.characterCount;
                     hasTextChanged = false; 
                 }
 

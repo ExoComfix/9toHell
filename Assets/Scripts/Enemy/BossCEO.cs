@@ -161,15 +161,12 @@ public class BossCEO : MonoBehaviour
     void Die()
     {
         Debug.LogWarning("[VICTORY] CEO İstifasını Verdi! Plaza Tamamen Temizlendi.");
-        Manager_UIManager uiManager = FindAnyObjectByType<Manager_UIManager>();
-        if (uiManager != null)
+
+        if (FloorManager.Instance != null)
         {
-            uiManager.ShowVictoryScreen();
+            FloorManager.Instance.NotifyBossDefeated();
         }
-        else
-        {
-            Debug.LogError("Manager_UIManager bulunamadı, zafer ekranı açılamıyor!");
-        }
+
         gameObject.SetActive(false);
     }
 }

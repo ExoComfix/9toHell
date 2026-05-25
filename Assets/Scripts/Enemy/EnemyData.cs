@@ -4,7 +4,7 @@ using UnityEngine;
 public class EnemyData : ScriptableObject
 {
     public string enemyName;
-    public EnemyAI.EnemyRole role;
+    public EnemyRole role;
     public float moveSpeed = 2.5f;
     public float maxHealth = 20f;
     public float burnoutDamage = 10f;

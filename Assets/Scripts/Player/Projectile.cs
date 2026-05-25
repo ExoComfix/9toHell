@@ -17,11 +17,31 @@ public class Projectile : MonoBehaviour
     [SerializeField] private string explosionFXPoolTag = "FX_Explosion";
 
     private PlayerController playerRef;
+    private ICombatSynergyQuery synergyQuery;
 
+    public void Setup(
+        Vector3 direction,
+        float damageAmount,
+        float projectileSpeed,
+        float projectileLifetime,
+        PlayerController player = null,
+        ICombatSynergyQuery synergy = null)
+    {
+        moveDirection = direction;
+        damage = damageAmount;
+        speed = projectileSpeed;
+        lifetime = projectileLifetime;
+        playerRef = player;
+        synergyQuery = synergy;
+
+        CancelInvoke(nameof(DeactivateProjectile));
+        Invoke(nameof(DeactivateProjectile), lifetime);
+    }
     public void Setup(Vector3 direction, PlayerController player = null)
     {
-        this.moveDirection = direction;
-        this.playerRef = player;
+        playerRef = player;
+        synergyQuery = player != null ? player.Combat : null;
+        moveDirection = direction;
 
         CancelInvoke(nameof(DeactivateProjectile));
         Invoke(nameof(DeactivateProjectile), lifetime);
@@ -39,95 +59,23 @@ public class Projectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        ProjectileHitProcessor processor = new ProjectileHitProcessor(
+            damage,
+            explosionRadius,
+            enemyLayer,
+            hitFXPoolTag,
+            explosionFXPoolTag,
+            synergyQuery,
+            playerRef != null ? playerRef.transform : null,
+            transform.position);
+
+        processor.ProcessHit(collision);
+
         if (collision.CompareTag("Enemy"))
         {
-            HandleHitVisuals(collision.transform.position);
-
-            if (playerRef != null)
-            {
-                if (playerRef.IsSynergyActive("Overtime"))
-                {
-                    ExecuteExplosionDamage();
-                    HandleExplosionVisuals();
-                }
-                else
-                {
-                    EnemyAI enemyScript = collision.GetComponent<EnemyAI>();
-                    if (enemyScript != null)
-                    {
-                        ApplyDamageAndSynergies(enemyScript);
-                    }
-                }
-            }
-            else
-            {
-                EnemyAI enemyScript = collision.GetComponent<EnemyAI>();
-                if (enemyScript != null) enemyScript.TakeDamage(damage);
-            }
-
             DeactivateProjectile();
         }
     }
-
-    private void HandleHitVisuals(Vector3 position)
-    {
-        if (ObjectPooler.Instance != null)
-        {
-            ObjectPooler.Instance.SpawnFromPool(hitFXPoolTag, position, Quaternion.identity);
-        }
-    }
-
-    private void ExecuteExplosionDamage()
-    {
-        Collider2D[] surroundedEnemies = Physics2D.OverlapCircleAll(transform.position, explosionRadius, enemyLayer);
-        foreach (Collider2D enemy in surroundedEnemies)
-        {
-            EnemyAI currentEnemy = enemy.GetComponent<EnemyAI>();
-            if (currentEnemy != null)
-            {
-                ApplyDamageAndSynergies(currentEnemy);
-            }
-        }
-    }
-
-    private void HandleExplosionVisuals()
-    {
-        if (ObjectPooler.Instance != null)
-        {
-            GameObject expFX = ObjectPooler.Instance.SpawnFromPool(explosionFXPoolTag, transform.position, Quaternion.identity);
-            if (expFX != null)
-            {
-                FX_Explosion fxScript = expFX.GetComponent<FX_Explosion>();
-                if (fxScript != null) fxScript.maxRadius = explosionRadius;
-            }
-        }
-        if (Camera.main != null)
-        {
-            CameraShake shaker = Camera.main.GetComponent<CameraShake>();
-            if (shaker != null) shaker.Shake(0.2f, 0.25f);
-        }
-    }
-
-    private void ApplyDamageAndSynergies(EnemyAI enemy)
-    {
-        if (playerRef == null || enemy == null) return;
-        enemy.TakeDamage(damage);
-        if (!enemy.gameObject.activeInHierarchy) return;
-        if (playerRef.IsSynergyActive("Deadline"))
-        {
-            enemy.ApplySlow(0.5f);
-        }
-        if (playerRef.IsSynergyActive("HomeOffice"))
-        {
-            Rigidbody2D enemyRb = enemy.GetComponent<Rigidbody2D>();
-            if (enemyRb != null)
-            {
-                Vector2 knockbackDirection = (enemy.transform.position - playerRef.transform.position).normalized;
-                enemyRb.AddForce(knockbackDirection * 15f, ForceMode2D.Impulse);
-            }
-        }
-    }
-
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

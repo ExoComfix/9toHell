@@ -30,6 +30,13 @@ public class Manager_UIManager : MonoBehaviour
     public TextMeshProUGUI finalLevelText;
     public Button restartButton;
 
+    [Header("Objective UI Elements")]
+    public GameObject objectivePanel;
+    public TextMeshProUGUI objectiveNameText;
+    public TextMeshProUGUI objectiveDescText;
+    public Slider objectiveProgressSlider;
+    public Image sliderFillImage;
+
     [Header("Victory Screen Settings")]
     public GameObject victoryPanel;
 
@@ -40,6 +47,7 @@ public class Manager_UIManager : MonoBehaviour
     public List<UpgradeCard> allUpgradesPool = new List<UpgradeCard>();
     private List<UpgradeCard> currentSelectedCards = new List<UpgradeCard>();
     private PlayerController player;
+    private EnemySpawner enemySpawner;
 
     private int upgradeQueueCount = 0;
     [HideInInspector] public int currentLevelXP = 0;
@@ -56,19 +64,21 @@ public class Manager_UIManager : MonoBehaviour
         if (upgradePanel != null) upgradePanel.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
         if (victoryPanel != null) victoryPanel.SetActive(false);
+        if (objectiveProgressSlider != null) objectiveProgressSlider.gameObject.SetActive(false);
 
         if (characterSelectionPanel != null)
         {
             characterSelectionPanel.SetActive(true);
             Time.timeScale = 0f;
+            SetEnemySpawnPause(true);
         }
     }
 
     private void SetupButtonListeners()
     {
-        card1Button.onClick.AddListener(() => OnCardClicked(0));
-        card2Button.onClick.AddListener(() => OnCardClicked(1));
-        card3Button.onClick.AddListener(() => OnCardClicked(2));
+        if (card1Button != null) card1Button.onClick.AddListener(() => OnCardClicked(0));
+        if (card2Button != null) card2Button.onClick.AddListener(() => OnCardClicked(1));
+        if (card3Button != null) card3Button.onClick.AddListener(() => OnCardClicked(2));
 
         if (restartButton != null) restartButton.onClick.AddListener(RestartGame);
 
@@ -79,7 +89,28 @@ public class Manager_UIManager : MonoBehaviour
 
     private void FindPlayerReference()
     {
-        player = FindAnyObjectByType<PlayerController>();
+        if (player == null)
+        {
+            player = FindAnyObjectByType<PlayerController>();
+        }
+
+        if (enemySpawner == null)
+        {
+            enemySpawner = FindAnyObjectByType<EnemySpawner>();
+        }
+    }
+
+    private void SetEnemySpawnPause(bool paused)
+    {
+        if (enemySpawner == null)
+        {
+            enemySpawner = FindAnyObjectByType<EnemySpawner>();
+        }
+
+        if (enemySpawner != null)
+        {
+            enemySpawner.SetUIPause(paused);
+        }
     }
 
     private void OnEnable()
@@ -88,6 +119,8 @@ public class Manager_UIManager : MonoBehaviour
         PlayerController.OnXPChanged += UpdateXPUI;
         PlayerController.OnLevelChanged += OnPlayerLevelUp;
         PlayerController.OnPlayerDeath += TriggerGameOverScreen;
+        FloorManager.OnFloorStateChanged += HandleFloorStateChanged;
+        FloorManager.OnCollapseProgressUpdated += HandleCollapseProgressUpdated;
     }
     private void OnDisable()
     {
@@ -95,6 +128,8 @@ public class Manager_UIManager : MonoBehaviour
         PlayerController.OnXPChanged -= UpdateXPUI;
         PlayerController.OnLevelChanged -= OnPlayerLevelUp;
         PlayerController.OnPlayerDeath -= TriggerGameOverScreen;
+        FloorManager.OnFloorStateChanged -= HandleFloorStateChanged;
+        FloorManager.OnCollapseProgressUpdated -= HandleCollapseProgressUpdated;
     }
 
     #region CORE UI UPDATES
@@ -122,7 +157,7 @@ public class Manager_UIManager : MonoBehaviour
         if (Time.timeSinceLevelLoad > 0.1f)
         {
             upgradeQueueCount++;
-            if (!upgradePanel.activeSelf)
+            if (upgradePanel == null || !upgradePanel.activeSelf)
             {
                 ShowUpgradeScreen();
             }
@@ -169,6 +204,7 @@ public class Manager_UIManager : MonoBehaviour
         if (characterSelectionPanel != null) characterSelectionPanel.SetActive(false);
 
         Time.timeScale = 1f;
+        SetEnemySpawnPause(false);
         Debug.Log($"[SYSTEM] Oyun {player.currentDepartmentData.departmentName} olarak başladı!");
         UpdateLevelUI(player.currentLevel);
     }
@@ -197,8 +233,9 @@ public class Manager_UIManager : MonoBehaviour
         SetButtonTexts(card2Button, currentSelectedCards[1]);
         SetButtonTexts(card3Button, currentSelectedCards[2]);
 
-        upgradePanel.SetActive(true);
+        if (upgradePanel != null) upgradePanel.SetActive(true);
         Time.timeScale = 0f;
+        SetEnemySpawnPause(true);
     }
     private void SetButtonTexts(Button button, UpgradeCard cardData)
     {
@@ -229,13 +266,16 @@ public class Manager_UIManager : MonoBehaviour
         }
         else
         {
-            upgradePanel.SetActive(false);
+            if (upgradePanel != null) upgradePanel.SetActive(false);
             Time.timeScale = 1f;
+            SetEnemySpawnPause(false);
         }
     }
 
     private void ApplyStatUpgrade(string upgradeID)
     {
+        if (player == null) return;
+
         switch (upgradeID)
         {
             case "AttackSpeed": player.ApplyUpgradeToWeapon("FireRate", 0.75f); break;
@@ -251,6 +291,8 @@ public class Manager_UIManager : MonoBehaviour
     }
     private void CheckAndActivateSynergies()
     {
+        if (player == null) return;
+
         var chosen = player.chosenUpgradeIDs;
 
         // Mesai Patlaması Sinerjisi (Overtime)
@@ -302,6 +344,7 @@ public class Manager_UIManager : MonoBehaviour
         if (gameOverPanel == null) return;
 
         Time.timeScale = 0f;
+        SetEnemySpawnPause(true);
 
         float totalSeconds = Time.timeSinceLevelLoad;
         int minutes = Mathf.FloorToInt(totalSeconds / 60f);
@@ -312,7 +355,7 @@ public class Manager_UIManager : MonoBehaviour
             surviveTimeText.text = $"Toplam Mesai Süresi: <color=#FFCC00>{minutes:00}:{seconds:00}</color>";
         }
 
-        if (finalLevelText != null)
+        if (finalLevelText != null && player != null)
         {
             string finalTitle = levelText != null ? levelText.text.Split('(')[0] : "Çalışan";
             finalLevelText.text = $"{finalTitle}\n(<color=#00FFCC>Seviye {player.currentLevel}</color> konumunda istifa edildi)";
@@ -321,8 +364,71 @@ public class Manager_UIManager : MonoBehaviour
         gameOverPanel.SetActive(true);
         ConvertXPToSeniorityPoints();
     }
+    private void HandleFloorStateChanged(FloorManager.FloorState newState)
+    {
+        switch (newState)
+        {
+            case FloorManager.FloorState.Exploration:
+                if (objectivePanel != null) objectivePanel.SetActive(true);
+                break;
+            case FloorManager.FloorState.CorporateCollapse:
+                if (objectiveDescText != null)
+                    objectiveDescText.text = "<color=red><b>⚠️ ŞİRKET ÇÖKÜYOR! BOSS ÇAĞIRILMAYA HAZIR!</b></color>";
+                break;
+            case FloorManager.FloorState.BossEncounter:
+                if (objectiveNameText != null) objectiveNameText.text = "[👹 EXECUTIVE ALERT]";
+                break;
+            case FloorManager.FloorState.FloorCleared:
+                if (objectivePanel != null) objectivePanel.SetActive(false);
+                ShowVictoryScreen();
+                break;
+        }
+    }
+    public void InitializeObjectiveUI(string name, string desc, float maxProgress)
+    {
+        if (objectivePanel != null) objectivePanel.SetActive(true);
+        if (objectiveProgressSlider != null)
+        {
+            objectiveProgressSlider.gameObject.SetActive(true);
+            objectiveProgressSlider.maxValue = maxProgress;
+            objectiveProgressSlider.value = 0f;
+        }
+        if (objectiveNameText != null) objectiveNameText.text = name;
+        if (objectiveDescText != null) objectiveDescText.text = desc;
+    }
+    public void UpdateObjectiveProgress(float currentProgress, bool isPlayerInside)
+    {
+        if (objectiveProgressSlider == null) return;
+
+        objectiveProgressSlider.value = currentProgress;
+        if (sliderFillImage != null)
+        {
+            sliderFillImage.color = isPlayerInside ? Color.cyan : Color.red;
+        }
+
+        if (objectiveDescText != null)
+        {
+            float percentage = (currentProgress / objectiveProgressSlider.maxValue) * 100f;
+            objectiveDescText.text = isPlayerInside
+                ? $"Reboot İşlemi: %{percentage:F0} (Sistem Odasındasınız)"
+                : $"<color=red>⚠️ ALANDAN AYRILDINIZ! (Progress Azalıyor: %{percentage:F0})</color>";
+        }
+    }
+    public void ClearObjectiveUI(string completionMessage)
+    {
+        if (objectiveDescText != null) objectiveDescText.text = $"<color=green><b>{completionMessage}</b></color>";
+        StartCoroutine(HideSliderRoutine());
+    }
+
+    private System.Collections.IEnumerator HideSliderRoutine()
+    {
+        yield return new WaitForSeconds(2f);
+        if (objectiveProgressSlider != null) objectiveProgressSlider.gameObject.SetActive(false);
+    }
     public void ShowVictoryScreen()
     {
+        SetEnemySpawnPause(true);
+
         if (victoryPanel != null)
         {
             Time.timeScale = 0f;
@@ -344,9 +450,13 @@ public class Manager_UIManager : MonoBehaviour
         {
             victoryPanel.SetActive(false);
             Time.timeScale = 1f;
+        }
 
-            EnemySpawner spawner = FindAnyObjectByType<EnemySpawner>();
-            if (spawner != null) spawner.enabled = true;
+        SetEnemySpawnPause(false);
+
+        if (FloorManager.Instance != null)
+        {
+            FloorManager.Instance.RequestContinueAfterVictory();
         }
     }
     private void ConvertXPToSeniorityPoints()
@@ -371,6 +481,9 @@ public class Manager_UIManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenu");
+    }
+    private void HandleCollapseProgressUpdated(float percentage)
+    {
     }
     #endregion
 }

@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(PlayerController))]
+[RequireComponent(typeof(PlayerCombatCoordinator))]
+[DisallowMultipleComponent]
 public class AutoAttack : MonoBehaviour
 {
     [Header("Data Driven Weapon")]
@@ -17,10 +20,14 @@ public class AutoAttack : MonoBehaviour
 
     private Transform currentNearestEnemy;
     private PlayerController playerController;
+    private PlayerCombatCoordinator combatCoordinator;
+    private EnemyTargetScanner targetScanner;
 
     private void Awake()
     {
         playerController = GetComponent<PlayerController>();
+        combatCoordinator = GetComponent<PlayerCombatCoordinator>();
+        targetScanner = new EnemyTargetScanner(transform, enemyLayer, () => dynamicRange);
     }
 
     private void Start()
@@ -31,26 +38,22 @@ public class AutoAttack : MonoBehaviour
 
     public void InitializeWeapon()
     {
-        if (currentWeaponData != null)
-        {
-            currentFireRate = currentWeaponData.baseFireRate;
-            dynamicRange = currentWeaponData.attackRange;
-        }
+        if (currentWeaponData == null) return;
+
+        currentFireRate = currentWeaponData.baseFireRate;
+        dynamicRange = currentWeaponData.attackRange;
     }
 
     private void Update()
     {
         if (currentWeaponData == null) return;
+        if (Time.time < nextFireTime) return;
+        if (currentNearestEnemy == null) return;
 
-        if (Time.time >= nextFireTime)
-        {
-            if (currentNearestEnemy != null)
-            {
-                ExecuteAttackPattern(currentNearestEnemy);
-                nextFireTime = Time.time + currentFireRate;
-            }
-        }
+        ExecuteAttackPattern(currentNearestEnemy);
+        nextFireTime = Time.time + currentFireRate;
     }
+
     private IEnumerator ScanForTargetsRoutine()
     {
         WaitForSeconds wait = new WaitForSeconds(targetScanRate);
@@ -58,36 +61,18 @@ public class AutoAttack : MonoBehaviour
         {
             if (currentWeaponData != null)
             {
-                currentNearestEnemy = FindNearestEnemy();
+                currentNearestEnemy = targetScanner.FindNearest();
             }
             yield return wait;
         }
     }
 
-    private Transform FindNearestEnemy()
-    {
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, dynamicRange, enemyLayer);
-        Transform nearestEnemy = null;
-        float shortestDistance = Mathf.Infinity;
-
-        foreach (Collider2D enemy in hitEnemies)
-        {
-            float distanceToEnemy = (transform.position - enemy.transform.position).sqrMagnitude;
-            if (distanceToEnemy < shortestDistance)
-            {
-                shortestDistance = distanceToEnemy;
-                nearestEnemy = enemy.transform;
-            }
-        }
-        return nearestEnemy;
-    }
-
     private void ExecuteAttackPattern(Transform target)
     {
-        if (ObjectPooler.Instance == null || currentWeaponData == null) return;
+        if (currentWeaponData == null) return;
 
         Vector3 baseDirection = (target.position - transform.position).normalized;
-        if (playerController != null && playerController.IsSynergyActive("Brainstorm"))
+        if (combatCoordinator != null && combatCoordinator.IsSynergyActive(CombatSynergyIds.Brainstorm))
         {
             FireProjectile(baseDirection);
             FireProjectile(Quaternion.Euler(0, 0, 15) * baseDirection);
@@ -101,26 +86,23 @@ public class AutoAttack : MonoBehaviour
 
     private void FireProjectile(Vector3 direction)
     {
-        GameObject projObj = ObjectPooler.Instance.SpawnFromPool(currentWeaponData.poolTag, transform.position, Quaternion.identity);
-
-        if (projObj != null)
-        {
-            Projectile projectile = projObj.GetComponent<Projectile>();
-            if (projectile != null)
-            {
-                projectile.Setup(direction, playerController);
-                projectile.damage = currentWeaponData.baseDamage * damageModifier;
-                projectile.speed = currentWeaponData.projectileSpeed;
-                projectile.lifetime = currentWeaponData.lifetime;
-            }
-        }
+        ProjectileLauncher.Fire(
+            currentWeaponData,
+            damageModifier,
+            transform.position,
+            direction,
+            playerController,
+            combatCoordinator);
     }
+
     #region MUTATORS (YÜKSELTME SİSTEMLERİ İÇİN)
+
     public void UpdateFireRate(float modifier)
     {
         if (currentWeaponData == null) return;
         currentFireRate = currentWeaponData.baseFireRate * modifier;
     }
+
     public void UpdateDamage(float multiplier)
     {
         damageModifier *= multiplier;
@@ -130,7 +112,9 @@ public class AutoAttack : MonoBehaviour
     {
         dynamicRange += bonusRange;
     }
+
     #endregion
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

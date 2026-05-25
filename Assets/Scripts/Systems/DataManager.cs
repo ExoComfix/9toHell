@@ -1,77 +1,94 @@
 using UnityEngine;
 
-public class DataManager : MonoBehaviour 
+public class DataManager : MonoBehaviour
 {
     public static DataManager Instance { get; private set; }
 
-    private const string TOTAL_XP_KEY = "TotalSeniorityPoints";
-    private const string UPGRADE_DAMAGE_KEY = "Upgrade_DamageLevel";
-    private const string UPGRADE_SPEED_KEY = "Upgrade_SpeedLevel";
-    private const string UPGRADE_HEALTH_KEY = "Upgrade_HealthLevel";
+    private const string PointsKey = "SeniorityPoints";
+    private const string DamageLevelKey = "Upgrade_Damage";
+    private const string SpeedLevelKey = "Upgrade_Speed";
+    private const string HealthLevelKey = "Upgrade_Health";
 
     private void Awake()
     {
-        if (Instance == null)
+        if (Instance != null && Instance != this)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            Destroy(this);
+            return;
         }
-        else 
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
         {
-            Destroy(gameObject);
+            Instance = null;
         }
     }
-    public int GetTotalPoints() => PlayerPrefs.GetInt(TOTAL_XP_KEY, 0);
+
+    public int GetTotalPoints()
+    {
+        return PlayerPrefs.GetInt(PointsKey, 0);
+    }
 
     public void AddPoints(int amount)
     {
-        int current = GetTotalPoints();
-        PlayerPrefs.SetInt(TOTAL_XP_KEY, current + amount);
+        if (amount <= 0) return;
+
+        int total = GetTotalPoints() + amount;
+        PlayerPrefs.SetInt(PointsKey, total);
         PlayerPrefs.Save();
     }
-    public bool SpendPoints(int amount)
+
+    public bool SpendPoints(int cost)
     {
-        int current = GetTotalPoints();
-        if (current >= amount)
+        if (cost <= 0) return true;
+
+        int total = GetTotalPoints();
+        if (total < cost) return false;
+
+        PlayerPrefs.SetInt(PointsKey, total - cost);
+        PlayerPrefs.Save();
+        return true;
+    }
+
+    public int GetUpgradeLevel(string upgradeType)
+    {
+        switch (upgradeType)
         {
-            PlayerPrefs.SetInt(TOTAL_XP_KEY, current - amount);
-            PlayerPrefs.Save();
-            return true;
+            case "Damage":
+                return PlayerPrefs.GetInt(DamageLevelKey, 0);
+            case "Speed":
+                return PlayerPrefs.GetInt(SpeedLevelKey, 0);
+            case "Health":
+                return PlayerPrefs.GetInt(HealthLevelKey, 0);
+            default:
+                return 0;
         }
-        return false;
     }
-    public int GetUpgradeLevel(string UpgradeType) 
-    {
-        return UpgradeType switch
-        {
-            "Damage" => PlayerPrefs.GetInt(UPGRADE_DAMAGE_KEY, 0),
-            "Speed" => PlayerPrefs.GetInt(UPGRADE_SPEED_KEY, 0),
-            "Health" => PlayerPrefs.GetInt(UPGRADE_HEALTH_KEY, 0),
-            _ => 0,
-        };
-    }
+
     public void IncreaseUpgradeLevel(string upgradeType)
     {
-        int currentLevel = GetUpgradeLevel(upgradeType);
-        string key = upgradeType switch
-        {
-            "Damage" => UPGRADE_DAMAGE_KEY,
-            "Speed" => UPGRADE_SPEED_KEY,
-            "Health" => UPGRADE_HEALTH_KEY,
-            _ => "",
-        };
-        if (!string.IsNullOrEmpty(key))
-        {
-            PlayerPrefs.SetInt(key, currentLevel + 1);
-            PlayerPrefs.Save();
-        }
-    }
-    // FOR TEST
+        int level = GetUpgradeLevel(upgradeType) + 1;
 
-    [ContextMenu("Reset All Data")]
-    public void ResetAllData()
-    {
-        PlayerPrefs.DeleteAll();
-        Debug.Log("[DATA MANAGER] Tüm veriler sýfýrlandý.");
+        switch (upgradeType)
+        {
+            case "Damage":
+                PlayerPrefs.SetInt(DamageLevelKey, level);
+                break;
+            case "Speed":
+                PlayerPrefs.SetInt(SpeedLevelKey, level);
+                break;
+            case "Health":
+                PlayerPrefs.SetInt(HealthLevelKey, level);
+                break;
+            default:
+                return;
+        }
+
+        PlayerPrefs.Save();
     }
 }

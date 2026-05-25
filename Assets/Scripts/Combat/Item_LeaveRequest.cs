@@ -22,7 +22,14 @@ public class Item_LeaveRequest : MonoBehaviour
                 uiManager.ShowSynergyNotification("<color=#00FF00><b>📄 İZİN DİLEKÇESİ ONAYLANDI! <b></color>\nTükenmişlik seviyesi azaldı, derin bir nefes al!");
             }
 
-            Destroy(gameObject);
+            if (ObjectPooler.Instance != null)
+            {
+                ObjectPooler.Instance.ReturnToPool(gameObject);
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
         }
     }
 }

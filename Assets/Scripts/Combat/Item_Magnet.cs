@@ -7,7 +7,7 @@ public class Item_Magnet : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             CollectAllXPOnScreen();
-            Destroy(gameObject);
+            ReturnSelfToPool();
         }
     }
 
@@ -26,6 +26,18 @@ public class Item_Magnet : MonoBehaviour
             uiManager.ShowSynergyNotification(
                 "<color=#00FFCC><b>🧲 GLOBAL MIKNATIS AKTİF!</b></color>\nTüm kurumsal hedefler toplanıyor!"
             );
+        }
+    }
+
+    private void ReturnSelfToPool()
+    {
+        if (ObjectPooler.Instance != null)
+        {
+            ObjectPooler.Instance.ReturnToPool(gameObject);
+        }
+        else
+        {
+            gameObject.SetActive(false);
         }
     }
 }

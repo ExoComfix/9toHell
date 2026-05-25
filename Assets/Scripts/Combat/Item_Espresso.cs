@@ -7,6 +7,21 @@ public class Item_Espresso : MonoBehaviour
     public float speedMultiplier = 1.5f;
     public float duration = 5f;
 
+    private SpriteRenderer spriteRenderer;
+    private Collider2D pickupCollider;
+
+    private void Awake()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        pickupCollider = GetComponent<Collider2D>();
+    }
+
+    private void OnEnable()
+    {
+        if (spriteRenderer != null) spriteRenderer.enabled = true;
+        if (pickupCollider != null) pickupCollider.enabled = true;
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
@@ -23,9 +38,23 @@ public class Item_Espresso : MonoBehaviour
                 uiManager.ShowSynergyNotification("<color=#FF9933><b>☕ ÇİFT SHOT ESPRESSO!</b></color>\nHareket hızı 5 saniyeliğine uçuşa geçti!");
             }
 
-            GetComponent<SpriteRenderer>().enabled = false;
-            GetComponent<Collider2D>().enabled = false;
-            Destroy(gameObject, duration + 1f);
+            if (spriteRenderer != null) spriteRenderer.enabled = false;
+            if (pickupCollider != null) pickupCollider.enabled = false;
+            StartCoroutine(ReturnToPoolAfterDelay(duration + 1f));
+        }
+    }
+
+    private IEnumerator ReturnToPoolAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (ObjectPooler.Instance != null)
+        {
+            ObjectPooler.Instance.ReturnToPool(gameObject);
+        }
+        else
+        {
+            gameObject.SetActive(false);
         }
     }
 

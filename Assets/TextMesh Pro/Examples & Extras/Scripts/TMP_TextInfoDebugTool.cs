@@ -93,7 +93,8 @@ namespace TMPro.Examples
         }
 
 
-        /// <summary>
+        /// <
+        /// >
         /// Method to draw a rectangle around each character.
         /// </summary>
         /// <param name="text"></param>
